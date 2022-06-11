@@ -27,7 +27,7 @@ public class Tile : MonoBehaviour
         position.y = y;
     }
 
-    public void OnMouseEnter()
+    public void OnMouseOver()
     {
         GameManager.Instance.OnMouseOverTile(this);
     }

@@ -6,16 +6,24 @@ public class AI : Singleton<AI>
 {
     public enum Difficulty
     {
-        VERY_EASY,
         EASY,
-        NORMAL
+        NORMAL,
+        HARD
     }
 
     public Difficulty difficulty = Difficulty.EASY;
     public static bool didPlayerChooseDifficulty = false;
     public static Difficulty difficultyThatPlayerChose = Difficulty.EASY;
+    public int easyMinimaxDepth = 1;
+    public int normalMinimaxDepth = 3;
+    public int hardMinimaxDepth = 6;
+    
+    private int maxMinimaxDepth = 3;
 
     private List<Move> possibleMoves;
+    private const float maxAiScore = 100;
+    private List<AiMove> rootMoves;
+    private const float decay = 0.98f;
 
     protected override void Awake()
     {
@@ -26,115 +34,200 @@ public class AI : Singleton<AI>
             difficulty = difficultyThatPlayerChose;
             print("Player chose " + difficulty);
         }
-    }
 
-    public void Run(BoardData boardData)
-    {
-        if(possibleMoves != null)
+        if(difficulty == Difficulty.EASY)
         {
-            possibleMoves.Clear();
+            maxMinimaxDepth = easyMinimaxDepth;
+        }
+        else if(difficulty == Difficulty.NORMAL)
+        {
+            maxMinimaxDepth = normalMinimaxDepth;
         }
         else
         {
-            possibleMoves = new List<Move>();
+            maxMinimaxDepth = hardMinimaxDepth;
         }
 
+        print(difficulty);
+        print("Minimax depth: " + maxMinimaxDepth);
+
+    }
+
+    private List<AiMove> GetPossibleMoves(GameManager.PawnColor side, BoardData boardData)
+    {
         int i, x, y;
+        List<AiMove> possibleAiMovesWithScores = new List<AiMove>();
+        List<Pawn> pawns = (side == GameManager.PawnColor.WHITE) ? PieceManager.Instance.whitePawns : PieceManager.Instance.blackPawns;
 
-        for(i = 0; i < PieceManager.Instance.blackPawns.Count; i++)
+        for (i = 0; i < pawns.Count; i++)
         {
-            Pawn blackPawn = PieceManager.Instance.blackPawns[i];
+            Pawn pawn = pawns[i];
 
-            for(x = 0; x < 8; x++)
+            for (x = 0; x < 8; x++)
             {
-                for(y = 0; y < 8; y++)
+                for (y = 0; y < 8; y++)
                 {
                     Position destinationPos = new Position(x, y);
                     //print(destinationPos.ToString());
-                    if(blackPawn.CanMoveHere(destinationPos, boardData))
+                    if (pawn.CanMoveHere(destinationPos, boardData))
                     {
-                        Move possibleMove = new Move(blackPawn.position, destinationPos, 'p', boardData.GetChar(destinationPos));
+                        Move possibleMove = new Move(pawn.position, destinationPos, 'p', boardData.GetChar(destinationPos));
+                        AiMove possibleMoveWithScore = new AiMove();
+                        possibleMoveWithScore.move = possibleMove;
                         //print(possibleMove.ToString());
-                        possibleMoves.Add(possibleMove);
+                        possibleAiMovesWithScores.Add(possibleMoveWithScore);
                     }
                 }
             }
         }
 
-        Move decidedMove;
+        return possibleAiMovesWithScores;
+    }
 
-        if(difficulty > Difficulty.VERY_EASY)
+    public void Run(BoardData boardData)
+    {
+        print("Executing AI");
+
+        float timeWhenAiStarted = Time.realtimeSinceStartup;
+
+        //List<AiMove> possibleMoves = GetPossibleMoves(currentBoard);
+        rootMoves = new List<AiMove>();
+        //AiMove rootMove = new AiMove()
+        float alpha = float.MinValue;
+        float beta = float.MaxValue;
+
+        int i;
+
+        List<AiMove> possibleMovesWithScores = GetPossibleMoves(GameManager.PawnColor.BLACK, GameManager.Instance.boardData);
+        
+        for(i = 0; i < possibleMovesWithScores.Count; i++)
         {
-            for (i = 0; i < possibleMoves.Count; i++)
+            BoardData boardDataCopy = new BoardData();
+            boardDataCopy.Init();
+            boardDataCopy.Copy(boardData);
+            boardDataCopy.MakeMove(possibleMovesWithScores[i].move);
+
+            possibleMovesWithScores[i].score = Minimax(0, possibleMovesWithScores[i].move, boardDataCopy, GameManager.PawnColor.BLACK, alpha, beta);
+            //print(possibleMovesWithScores[i].move.ToString() + " " + possibleMovesWithScores[i].score);
+        }
+
+        AiMove bestAiMove = null;
+        float bestMoveScore = float.MinValue;
+
+        for(i = 0; i < possibleMovesWithScores.Count; i++)
+        {
+            if(possibleMovesWithScores[i].score > bestMoveScore)
             {
-                if (possibleMoves[i].destinationChar == 'P')
+                bestAiMove = possibleMovesWithScores[i];
+                bestMoveScore = possibleMovesWithScores[i].score;
+            }
+        }
+
+        print(bestMoveScore);
+
+        GameManager.Instance.MakeMove(bestAiMove.move);
+    }
+
+    private float Minimax(int depth, Move move, BoardData boardData, GameManager.PawnColor sideWhoseScoreIsCalculated, float alpha, float beta)
+    {
+        //print(move.destinationChar);
+
+        if(move.destinationChar == 'P')
+        {
+            return maxAiScore * Mathf.Pow(decay, depth) + (Random.value);
+        }
+
+        if(move.destinationChar == 'p')
+        {
+            return -maxAiScore * Mathf.Pow(decay, depth) + (Random.value);
+        }
+
+        if(depth >=maxMinimaxDepth)
+        {
+            return Random.Range(0f, 1f);
+        }
+
+        bool isMaximizing = sideWhoseScoreIsCalculated == GameManager.PawnColor.BLACK;
+
+        GameManager.PawnColor oppositeSide = GameManager.GetOppositePawnColor(sideWhoseScoreIsCalculated);
+        List<float> scores = new List<float>();
+        List<AiMove> possibleAiMovesWithScores = GetPossibleMoves(sideWhoseScoreIsCalculated, boardData);
+        int i;
+
+        float best = (isMaximizing) ? float.MinValue : float.MaxValue;
+
+        for (i = 0; i < possibleAiMovesWithScores.Count; i++)
+        {
+            BoardData boardDataCopy = new BoardData();
+            boardDataCopy.Init();
+            boardDataCopy.Copy(boardData);
+            boardDataCopy.MakeMove(move);
+
+            float score = Minimax(depth + 1, possibleAiMovesWithScores[i].move, boardDataCopy, oppositeSide, alpha, beta);
+            possibleAiMovesWithScores[i].score = (score);
+            scores.Add(possibleAiMovesWithScores[i].score);
+
+            if (depth == 0)
+            {
+                rootMoves.Add(possibleAiMovesWithScores[i]);
+            }
+
+            if (isMaximizing)
+            {
+                best = Mathf.Max(score, best);
+                alpha = Mathf.Max(alpha, best);
+
+                if (beta <= alpha)
                 {
-                    decidedMove = possibleMoves[i];
-                    GameManager.Instance.MakeMove(decidedMove);
-                    return;
+                    break;
+                }
+            }
+            else
+            {
+                best = Mathf.Min(best, score);
+                beta = Mathf.Min(beta, best);
+
+                // Alpha Beta Pruning 
+                if (beta <= alpha)
+                {
+                    break;
                 }
             }
         }
 
-        int randomIndex = Random.Range(0, possibleMoves.Count);
-
-        if(difficulty >= Difficulty.NORMAL)
-        {
-            int counter = 0;
-            while (!IsMoveSafe(possibleMoves[randomIndex], boardData) && counter < possibleMoves.Count)
-            {
-                randomIndex++;
-                randomIndex %= possibleMoves.Count;
-                counter++;
-            }
-        }
-
-        decidedMove = possibleMoves[randomIndex];
-        GameManager.Instance.MakeMove(decidedMove);
+        return (isMaximizing) ? GetMaxOfList(scores) : GetMinOfList(scores);
     }
 
-    bool IsMoveSafe(Move move, BoardData boardData)
+    private float GetMaxOfList(List<float> list)
     {
-        if(move.destinationChar == 'P')
-        {
-            return true;
-        }
-        BoardData boardDataCopy = new BoardData();
-        boardDataCopy.Init();
-
-        int x, y;
-        for(x = 0; x < 8; x++)
-        {
-            for(y = 0; y < 8; y++)
-            {
-                boardDataCopy.charMap[x, y] = boardData.charMap[x, y];
-            }
-        }
-
-        boardDataCopy.MakeMove(move);
         int i;
-        for(i = 0; i < PieceManager.Instance.whitePawns.Count; i++)
+        float maxValue = float.MinValue;
+
+        for (i = 0; i < list.Count; i++)
         {
-            Pawn whitePawn = PieceManager.Instance.whitePawns[i];
-            if(whitePawn.CanMoveHere(move.destinationPos, boardDataCopy))
+            if (list[i] > maxValue)
             {
-                print("Move " + move.ToString() + " is dangerous");
-                return false;
+                maxValue = list[i];
             }
         }
 
-        return true;
+        return maxValue;
     }
 
-    // Start is called before the first frame update
-    void Start()
+    private float GetMinOfList(List<float> list)
     {
-        
+        int i;
+        float minValue = float.MaxValue;
+
+        for (i = 0; i < list.Count; i++)
+        {
+            if (list[i] < minValue)
+            {
+                minValue = list[i];
+            }
+        }
+
+        return minValue;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

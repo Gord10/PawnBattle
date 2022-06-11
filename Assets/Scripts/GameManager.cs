@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using DG.Tweening;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -18,7 +19,8 @@ public class GameManager : Singleton<GameManager>
         WAITING_FOR_DESTINATION,
         WHITE_VICTORY,
         BLACK_VICTORY,
-        CALCULATING_AI
+        CALCULATING_AI,
+        PAWN_IS_MOVING
     }
 
     private State state = State.WAITING_FOR_SOURCE;
@@ -124,7 +126,7 @@ public class GameManager : Singleton<GameManager>
 
     public void OnMouseDownTile(Tile tile)
     {
-        if(DidGameEnd())
+        if(DidGameEnd() || state == State.PAWN_IS_MOVING)
         {
             return;
         }
@@ -146,7 +148,7 @@ public class GameManager : Singleton<GameManager>
         {
             if(selectedPawn.CanMoveHere(tile.position, boardData))
             {
-                MakeMove(selectedPawn.position, tile.position, selectedPawn);
+                StartCoroutine(MakeMove(selectedPawn.position, tile.position, selectedPawn));
 
             }
         }
@@ -160,11 +162,21 @@ public class GameManager : Singleton<GameManager>
     public void MakeMove(Move move)
     {
         Pawn pawn = PieceManager.Instance.GetPawnAtPosition(move.sourcePos);
-        print(move.ToString());
-        MakeMove(move.sourcePos, move.destinationPos, pawn);
+        //print(move.ToString());
+        StartCoroutine(MakeMove(move.sourcePos, move.destinationPos, pawn));
     }
 
-    public void MakeMove(Position sourcePos, Position destinationPos, Pawn pawn)
+    public static PawnColor GetOppositePawnColor(PawnColor color)
+    {
+        if(color == PawnColor.WHITE)
+        {
+            return PawnColor.BLACK;
+        }
+
+        return PawnColor.WHITE;
+    }
+
+    public IEnumerator MakeMove(Position sourcePos, Position destinationPos, Pawn pawn)
     {
         Move move = new Move(sourcePos, destinationPos, (pawn.color == PawnColor.WHITE)? 'P' : 'p');
         char destinationChar = boardData.GetChar(destinationPos);
@@ -179,6 +191,20 @@ public class GameManager : Singleton<GameManager>
             whoseTurn = PawnColor.BLACK;
         }
 
+
+
+        boardData.MakeMove(move);
+
+        if(!DidGameEnd())
+        {
+            SetState(State.PAWN_IS_MOVING);
+        }
+
+        Vector3 newWorldPosition = Board.Instance.GetTileWorldPosition(destinationPos);
+        float movementTime = 0.4f;
+        pawn.transform.DOMove(newWorldPosition, movementTime);
+        yield return new WaitForSeconds(movementTime);
+
         if (destinationChar == 'P')
         {
             SetState(State.BLACK_VICTORY);
@@ -192,10 +218,7 @@ public class GameManager : Singleton<GameManager>
             PieceManager.Instance.DestroyPawnAtPosition(destinationPos);
         }
 
-        boardData.MakeMove(move);
-
-        Vector3 newWorldPosition = Board.Instance.GetTileWorldPosition(destinationPos);
-        pawn.transform.position = newWorldPosition;
+        //pawn.transform.position = newWorldPosition;
         pawn.SetPosition(destinationPos);
         Board.Instance.ClearBoardHighlight();
 
@@ -212,7 +235,7 @@ public class GameManager : Singleton<GameManager>
             }
         }
         
-        print("Turn: " + whoseTurn);
+        //print("Turn: " + whoseTurn);
     }
 
     private void SetState(State newState)

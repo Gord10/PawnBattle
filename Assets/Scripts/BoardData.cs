@@ -46,4 +46,16 @@ public struct BoardData
         charMap[move.sourcePos.x, move.sourcePos.y] = '.';
         charMap[move.destinationPos.x, move.destinationPos.y] = move.sourceChar;
     }
+
+    public void Copy(BoardData original)
+    {
+        int i, j;
+        for (i = 0; i < 8; i++)
+        {
+            for (j = 0; j < 8; j++)
+            {
+                charMap[i, j] = original.charMap[i, j];
+            }
+        }
+    }
 }
