@@ -21,4 +21,9 @@ public struct Position
     {
         return (A.x != B.x || A.y != B.y);
     }
+
+    public override string ToString()
+    {
+        return (x + 1).ToString() + "x" + (y + 1).ToString();
+    }
 }

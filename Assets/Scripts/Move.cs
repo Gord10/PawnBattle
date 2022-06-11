@@ -14,4 +14,9 @@ public struct Move
         this.sourceChar = sourceChar;
         this.destinationChar = destinationChar;
     }
+
+    public override string ToString()
+    {
+        return "Source: " + sourcePos.ToString() + " Dest: " + destinationPos.ToString() + " " + sourceChar + " " + destinationChar;
+    }
 }

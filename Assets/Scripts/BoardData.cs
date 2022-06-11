@@ -2,13 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BoardData
+public struct BoardData
 {
     public char[,] charMap;
 
-    public BoardData()
+
+    public void Init()
     {
         charMap = new char[8, 8];
+
         int i, j;
         for(i = 0; i < 8; i++)
         {

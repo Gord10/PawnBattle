@@ -6,6 +6,8 @@ public class PieceManager : Singleton<PieceManager>
 {
     public Pawn whitePawnPrefab, blackPawnPrefab;
     public List<Pawn> allPawns;
+    public List<Pawn> whitePawns;
+    public List<Pawn> blackPawns;
 
     public void DeletePawnsInScene()
     {
@@ -33,6 +35,7 @@ public class PieceManager : Singleton<PieceManager>
                     Pawn pawn = Instantiate(whitePawnPrefab, worldPosition, Quaternion.identity, transform);
                     pawn.SetPosition(i, j);
                     allPawns.Add(pawn);
+                    whitePawns.Add(pawn);
                     //print("P "+ i + " " + j);
                 }
                 else if(c == 'p')
@@ -41,6 +44,7 @@ public class PieceManager : Singleton<PieceManager>
                     Pawn pawn = Instantiate(blackPawnPrefab, worldPosition, Quaternion.identity, transform);
                     pawn.SetPosition(i, j);
                     allPawns.Add(pawn);
+                    blackPawns.Add(pawn);
                     //print("p " + i + " " + j);
                 }
             }
@@ -63,18 +67,9 @@ public class PieceManager : Singleton<PieceManager>
 
     public void DestroyPawnAtPosition(Position position)
     {
+        print("Destroy pawn at position");
         Destroy(GetPawnAtPosition(position).gameObject);
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

@@ -16,7 +16,8 @@ public class GameManager : Singleton<GameManager>
         WAITING_FOR_SOURCE,
         WAITING_FOR_DESTINATION,
         WHITE_VICTORY,
-        BLACK_VICTORY
+        BLACK_VICTORY,
+        CALCULATING_AI
     }
 
     private State state = State.WAITING_FOR_SOURCE;
@@ -27,6 +28,7 @@ public class GameManager : Singleton<GameManager>
     protected override void Awake()
     {
         boardData = new BoardData();
+        boardData.Init();
         boardData.PlacePawnsOnDefaultPosition();
 
         Board.Instance.DeleteAllTiles();
@@ -114,8 +116,18 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public bool DidGameEnd()
+    {
+        return state == State.BLACK_VICTORY || state == State.WHITE_VICTORY;
+    }
+
     public void OnMouseDownTile(Tile tile)
     {
+        if(DidGameEnd())
+        {
+            return;
+        }
+
         char c = boardData.GetChar(tile.position);
 
         if(c == 'P')
@@ -139,23 +151,44 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public void RunAi()
+    {
+        AI.Instance.Run(boardData);
+    }
+
+    public void MakeMove(Move move)
+    {
+        Pawn pawn = PieceManager.Instance.GetPawnAtPosition(move.sourcePos);
+        print(move.ToString());
+        MakeMove(move.sourcePos, move.destinationPos, pawn);
+    }
+
     public void MakeMove(Position sourcePos, Position destinationPos, Pawn pawn)
     {
         Move move = new Move(sourcePos, destinationPos, (pawn.color == PawnColor.WHITE)? 'P' : 'p');
         char destinationChar = boardData.GetChar(destinationPos);
-        if (destinationChar == 'P')
+
+        if (whoseTurn == PawnColor.BLACK)
         {
-            SetState(State.BLACK_VICTORY);
-            PieceManager.Instance.DestroyPawnAtPosition(destinationPos);
-        }
-        else if(destinationChar == 'p')
-        {
-            SetState(State.WHITE_VICTORY);
-            PieceManager.Instance.DestroyPawnAtPosition(destinationPos);
+            whoseTurn = PawnColor.WHITE;
+
         }
         else
         {
-            SetState(State.WAITING_FOR_SOURCE);
+            whoseTurn = PawnColor.BLACK;
+        }
+
+        if (destinationChar == 'P')
+        {
+            SetState(State.BLACK_VICTORY);
+            //willGameContinue = false;
+            PieceManager.Instance.DestroyPawnAtPosition(destinationPos);
+        }
+        else if (destinationChar == 'p')
+        {
+            //willGameContinue = false;
+            SetState(State.WHITE_VICTORY);
+            PieceManager.Instance.DestroyPawnAtPosition(destinationPos);
         }
 
         boardData.MakeMove(move);
@@ -163,8 +196,22 @@ public class GameManager : Singleton<GameManager>
         Vector3 newWorldPosition = Board.Instance.GetTileWorldPosition(destinationPos);
         pawn.transform.position = newWorldPosition;
         pawn.SetPosition(destinationPos);
-        //SetState(State.WAITING_FOR_SOURCE);
         Board.Instance.ClearBoardHighlight();
+
+        if(state != State.BLACK_VICTORY && state != State.WHITE_VICTORY)
+        {
+            if (whoseTurn == PawnColor.WHITE)
+            {
+                SetState(State.WAITING_FOR_SOURCE);
+            }
+            else
+            {
+                SetState(State.CALCULATING_AI);
+                RunAi();
+            }
+        }
+        
+        print("Turn: " + whoseTurn);
     }
 
     private void SetState(State newState)
