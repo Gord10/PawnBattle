@@ -2,22 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Board : MonoBehaviour
+public class Board : Singleton<Board>
 {
-    public int width = 8;
-    public int height = 8;
-
     public Tile tilePrefab;
-    public Pawn whitePawnPrefab, blackPawnPrefab;
+    public Tile[,] tiles;
 
-    private void Awake()
+    protected override void Awake()
     {
-        DeleteAllBoardElements();
-        CreateTiles();
-        CreatePawns();
     }
 
-    private void DeleteAllBoardElements()
+    public Vector3 GetTileWorldPosition(int x, int y)
+    {
+        return tiles[x, y].transform.position;
+    }
+
+    public void DeleteAllTiles()
     {
         Tile[] tiles = FindObjectsOfType<Tile>();
         int i;
@@ -25,47 +24,49 @@ public class Board : MonoBehaviour
         {
             Destroy(tiles[i].gameObject);
         }
-
-        Pawn[] pawns = FindObjectsOfType<Pawn>();
-        
-        for(i = 0; i < pawns.Length; i++)
-        {
-            Destroy(pawns[i].gameObject);
-        }
     }
 
-    private void CreateTiles()
+    public void CreateTiles()
     {
+        tiles = new Tile[8, 8];
         int i, j;
-        for(i = 0; i < width; i++)
+        for(i = 0; i < 8; i++)
         {
-            for(j = 0; j < height; j++)
+            for(j = 0; j < 8; j++)
             {
                 Tile tile = Instantiate(tilePrefab, new Vector3(i - 3.5f, j - 3.5f, 1), Quaternion.identity, transform);
                 tile.SetColor((i + j) % 2 == 0);
+                tiles[i, j] = tile;
+                tile.name = (i + 1).ToString() + "x" + (j + 1).ToString();
+                tile.SetPosition(i, j);
             }
         }
     }
 
-    private void CreatePawns()
+    public void ClearBoardHighlight()
     {
-        int i;
-        for(i = 0; i < width; i++)
+        int i, j;
+        for(i = 0; i < 8; i++)
         {
-            Pawn pawn = Instantiate(whitePawnPrefab, new Vector3(i - 3.5f, -3.5f, 0), Quaternion.identity, transform);
-            pawn = Instantiate(blackPawnPrefab, new Vector3(i - 3.5f, 3.5f, 0), Quaternion.identity, transform);
+            for(j = 0; j < 8; j++)
+            {
+                tiles[i, j].inputIndicator.Hide();
+            }
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
+    public void MarkPossibleDestinations(Pawn selectedPawn, BoardData boardData)
     {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        int i, j;
+        for (i = 0; i < 8; i++)
+        {
+            for (j = 0; j < 8; j++)
+            {
+                if(selectedPawn.CanMoveHere(new Position(i, j), boardData))
+                {
+                    tiles[i, j].inputIndicator.MakeGreen();
+                }
+            }
+        }
     }
 }

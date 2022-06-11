@@ -5,12 +5,15 @@ using UnityEngine;
 public class Tile : MonoBehaviour
 {
     public Color lightColor, darkColor;
+    public Position position;
+    public TileInputIndicator inputIndicator;
 
     private SpriteRenderer spriteRenderer;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        inputIndicator = GetComponentInChildren<TileInputIndicator>();
     }
 
     public void SetColor(bool isLight)
@@ -18,15 +21,25 @@ public class Tile : MonoBehaviour
         spriteRenderer.color = (isLight) ? lightColor : darkColor;
     }
 
-    // Start is called before the first frame update
-    void Start()
+    public void SetPosition(int x, int y)
     {
-        
+        position.x = x;
+        position.y = y;
     }
 
-    // Update is called once per frame
-    void Update()
+    public void OnMouseEnter()
     {
-        
+        GameManager.Instance.OnMouseOverTile(this);
     }
+
+    public void OnMouseExit()
+    {
+        GameManager.Instance.OnMouseExitTile(this);
+    }
+
+    public void OnMouseDown()
+    {
+        GameManager.Instance.OnMouseDownTile(this);
+    }
+
 }
