@@ -61,6 +61,11 @@ public class PieceManager : Singleton<PieceManager>
         return null;
     }
 
+    public void DestroyPawnAtPosition(Position position)
+    {
+        Destroy(GetPawnAtPosition(position).gameObject);
+    }
+
     // Start is called before the first frame update
     void Start()
     {

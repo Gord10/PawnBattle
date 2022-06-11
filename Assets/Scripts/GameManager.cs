@@ -14,7 +14,9 @@ public class GameManager : Singleton<GameManager>
     private enum State
     {
         WAITING_FOR_SOURCE,
-        WAITING_FOR_DESTINATION
+        WAITING_FOR_DESTINATION,
+        WHITE_VICTORY,
+        BLACK_VICTORY
     }
 
     private State state = State.WAITING_FOR_SOURCE;
@@ -132,8 +134,7 @@ public class GameManager : Singleton<GameManager>
             if(selectedPawn.CanMoveHere(tile.position, boardData))
             {
                 MakeMove(selectedPawn.position, tile.position, selectedPawn);
-                SetState(State.WAITING_FOR_SOURCE);
-                Board.Instance.ClearBoardHighlight();
+
             }
         }
     }
@@ -141,15 +142,34 @@ public class GameManager : Singleton<GameManager>
     public void MakeMove(Position sourcePos, Position destinationPos, Pawn pawn)
     {
         Move move = new Move(sourcePos, destinationPos, (pawn.color == PawnColor.WHITE)? 'P' : 'p');
+        char destinationChar = boardData.GetChar(destinationPos);
+        if (destinationChar == 'P')
+        {
+            SetState(State.BLACK_VICTORY);
+            PieceManager.Instance.DestroyPawnAtPosition(destinationPos);
+        }
+        else if(destinationChar == 'p')
+        {
+            SetState(State.WHITE_VICTORY);
+            PieceManager.Instance.DestroyPawnAtPosition(destinationPos);
+        }
+        else
+        {
+            SetState(State.WAITING_FOR_SOURCE);
+        }
+
         boardData.MakeMove(move);
 
         Vector3 newWorldPosition = Board.Instance.GetTileWorldPosition(destinationPos);
         pawn.transform.position = newWorldPosition;
         pawn.SetPosition(destinationPos);
+        //SetState(State.WAITING_FOR_SOURCE);
+        Board.Instance.ClearBoardHighlight();
     }
 
     private void SetState(State newState)
     {
         state = newState;
+        print(state);
     }
 }
