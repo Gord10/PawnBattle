@@ -16,6 +16,11 @@ public class Board : Singleton<Board>
         return tiles[x, y].transform.position;
     }
 
+    public Vector3 GetTileWorldPosition(Position pos)
+    {
+        return tiles[pos.x, pos.y].transform.position;
+    }
+
     public void DeleteAllTiles()
     {
         Tile[] tiles = FindObjectsOfType<Tile>();

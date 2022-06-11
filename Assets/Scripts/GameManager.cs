@@ -5,6 +5,11 @@ using UnityEngine;
 public class GameManager : Singleton<GameManager>
 {
     public BoardData boardData;
+    public enum PawnColor
+    {
+        WHITE,
+        BLACK
+    }
 
     private enum State
     {
@@ -15,6 +20,7 @@ public class GameManager : Singleton<GameManager>
     private State state = State.WAITING_FOR_SOURCE;
     private Position sourcePos, destinationPos;
     private Pawn selectedPawn;
+    private PawnColor whoseTurn = PawnColor.WHITE;
 
     protected override void Awake()
     {
@@ -100,7 +106,7 @@ public class GameManager : Singleton<GameManager>
         {
             tile.inputIndicator.Hide();
         }
-        else if(tile.position != sourcePos)
+        else if(tile.position != sourcePos && !selectedPawn.CanMoveHere(tile.position, boardData))
         {
             tile.inputIndicator.Hide();
         }
@@ -109,6 +115,7 @@ public class GameManager : Singleton<GameManager>
     public void OnMouseDownTile(Tile tile)
     {
         char c = boardData.GetChar(tile.position);
+
         if(c == 'P')
         {
             selectedPawn = PieceManager.Instance.GetPawnAtPosition(tile.position);
@@ -119,6 +126,26 @@ public class GameManager : Singleton<GameManager>
             
             SetState(State.WAITING_FOR_DESTINATION);
         }
+
+        if(state == State.WAITING_FOR_DESTINATION)
+        {
+            if(selectedPawn.CanMoveHere(tile.position, boardData))
+            {
+                MakeMove(selectedPawn.position, tile.position, selectedPawn);
+                SetState(State.WAITING_FOR_SOURCE);
+                Board.Instance.ClearBoardHighlight();
+            }
+        }
+    }
+
+    public void MakeMove(Position sourcePos, Position destinationPos, Pawn pawn)
+    {
+        Move move = new Move(sourcePos, destinationPos, (pawn.color == PawnColor.WHITE)? 'P' : 'p');
+        boardData.MakeMove(move);
+
+        Vector3 newWorldPosition = Board.Instance.GetTileWorldPosition(destinationPos);
+        pawn.transform.position = newWorldPosition;
+        pawn.SetPosition(destinationPos);
     }
 
     private void SetState(State newState)

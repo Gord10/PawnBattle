@@ -5,6 +5,7 @@ using UnityEngine;
 public class Pawn : MonoBehaviour
 {
     public Position position;
+    public GameManager.PawnColor color;
 
     public void SetPosition(Position position)
     {

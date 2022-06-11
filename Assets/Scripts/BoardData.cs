@@ -38,4 +38,10 @@ public class BoardData
             charMap[i, 6] = 'p';
         }
     }
+
+    public void MakeMove(Move move)
+    {
+        charMap[move.sourcePos.x, move.sourcePos.y] = '.';
+        charMap[move.destinationPos.x, move.destinationPos.y] = move.sourceChar;
+    }
 }
