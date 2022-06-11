@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -11,7 +12,7 @@ public class GameManager : Singleton<GameManager>
         BLACK
     }
 
-    private enum State
+    public enum State
     {
         WAITING_FOR_SOURCE,
         WAITING_FOR_DESTINATION,
@@ -217,6 +218,21 @@ public class GameManager : Singleton<GameManager>
     private void SetState(State newState)
     {
         state = newState;
-        print(state);
+        if(state == State.BLACK_VICTORY || state == State.WHITE_VICTORY)
+        {
+            GameUi.Instance.OpenGameEndScreen(state);
+        }
+    }
+
+    public static void RestartGame()
+    {
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        SceneManager.LoadScene(currentSceneName);
+    }
+
+
+    public static void OpenMenuScene()
+    {
+        SceneManager.LoadScene("Menu");
     }
 }

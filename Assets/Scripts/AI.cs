@@ -4,14 +4,29 @@ using UnityEngine;
 
 public class AI : Singleton<AI>
 {
-    public enum Mode
+    public enum Difficulty
     {
-        RANDOM,
-        MINIMAX
+        VERY_EASY,
+        EASY,
+        NORMAL
     }
 
-    public Mode mode = Mode.RANDOM;
+    public Difficulty difficulty = Difficulty.EASY;
+    public static bool didPlayerChooseDifficulty = false;
+    public static Difficulty difficultyThatPlayerChose = Difficulty.EASY;
+
     private List<Move> possibleMoves;
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        if(didPlayerChooseDifficulty)
+        {
+            difficulty = difficultyThatPlayerChose;
+            print("Player chose " + difficulty);
+        }
+    }
 
     public void Run(BoardData boardData)
     {
@@ -48,7 +63,7 @@ public class AI : Singleton<AI>
 
         Move decidedMove;
 
-        if(mode == Mode.RANDOM || true)
+        if(difficulty > Difficulty.VERY_EASY)
         {
             for (i = 0; i < possibleMoves.Count; i++)
             {
@@ -59,20 +74,22 @@ public class AI : Singleton<AI>
                     return;
                 }
             }
+        }
 
-            int randomIndex = Random.Range(0, possibleMoves.Count);
+        int randomIndex = Random.Range(0, possibleMoves.Count);
 
+        if(difficulty >= Difficulty.NORMAL)
+        {
             int counter = 0;
-            while(!IsMoveSafe(possibleMoves[randomIndex], boardData) && counter < possibleMoves.Count)
+            while (!IsMoveSafe(possibleMoves[randomIndex], boardData) && counter < possibleMoves.Count)
             {
                 randomIndex++;
                 randomIndex %= possibleMoves.Count;
                 counter++;
             }
-
-            decidedMove = possibleMoves[randomIndex];
         }
 
+        decidedMove = possibleMoves[randomIndex];
         GameManager.Instance.MakeMove(decidedMove);
     }
 
