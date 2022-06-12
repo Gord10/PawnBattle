@@ -75,7 +75,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 0.6462585, b: 0, a: 0.7490196}
+  m_Color: {r: 1, g: 0.6462585, b: 0, a: 0}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -178,7 +178,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.11764706, g: 0.11372549, b: 0.22352941, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -200,8 +200,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4bfa0007be010044b1ef697279bef56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lightColor: {r: 0.69633174, g: 0.78699994, b: 0.7688663, a: 1}
-  darkColor: {r: 0.11372549, g: 0.1764706, b: 0.24705882, a: 1}
+  lightColor: {r: 0.74509805, g: 0.6313726, b: 0.54509807, a: 1}
+  darkColor: {r: 0.11764706, g: 0.11372549, b: 0.22352941, a: 1}
   inputIndicator: {fileID: 0}
 --- !u!61 &4286939843266801132
 BoxCollider2D:

@@ -20,7 +20,6 @@ public class Pawn : MonoBehaviour
 
     public bool CanMoveHere(Position source, Position destination, BoardData boardData)
     {
-        
         if(source.x == destination.x && boardData.GetChar(destination) == '.')
         {
             if(source.y + 1 == destination.y && color == GameManager.PawnColor.WHITE)

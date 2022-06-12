@@ -126,7 +126,7 @@ public class GameManager : Singleton<GameManager>
 
     public void OnMouseDownTile(Tile tile)
     {
-        if(DidGameEnd() || state == State.PAWN_IS_MOVING)
+        if(DidGameEnd() || state == State.PAWN_IS_MOVING || state == State.CALCULATING_AI)
         {
             return;
         }
@@ -156,7 +156,7 @@ public class GameManager : Singleton<GameManager>
 
     public void RunAi()
     {
-        AI.Instance.Run(boardData);
+        AI.Instance.StartCoroutine(AI.Instance.Run(boardData));
     }
 
     public void MakeMove(Move move)

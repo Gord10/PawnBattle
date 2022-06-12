@@ -20,9 +20,7 @@ public class AI : Singleton<AI>
     
     private int maxMinimaxDepth = 3;
 
-    private List<Move> possibleMoves;
     private const float maxAiScore = 100;
-    private List<AiMove> rootMoves;
     private const float decay = 0.98f;
 
     protected override void Awake()
@@ -55,10 +53,38 @@ public class AI : Singleton<AI>
 
     private List<AiMove> GetPossibleMoves(GameManager.PawnColor side, BoardData boardData)
     {
-        int i, x, y;
+        int i, j, x, y;
         List<AiMove> possibleAiMovesWithScores = new List<AiMove>();
         List<Pawn> pawns = (side == GameManager.PawnColor.WHITE) ? PieceManager.Instance.whitePawns : PieceManager.Instance.blackPawns;
 
+        for(i = 0; i < 8; i++)
+        {
+            for(j = 0; j < 8; j++)
+            {
+                char ch = boardData.GetChar(i, j);
+                if((side == GameManager.PawnColor.WHITE && ch == 'P') || (side == GameManager.PawnColor.BLACK && ch == 'p'))
+                {
+                    for(x = 0; x < 8; x++)
+                    {
+                        for(y = 0; y < 8; y++)
+                        {
+                            Position sourcePos = new Position(i, j);
+                            Position destinationPos = new Position(x, y);
+                            if (pawns[0].CanMoveHere(sourcePos, destinationPos, boardData))
+                            {
+                                Move possibleMove = new Move(sourcePos, destinationPos, ch, boardData.GetChar(destinationPos));
+                                AiMove possibleMoveWithScore = new AiMove();
+                                possibleMoveWithScore.move = possibleMove;
+                                //print("Possible move " + possibleMove.ToString());
+                                possibleAiMovesWithScores.Add(possibleMoveWithScore);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        /*
         for (i = 0; i < pawns.Count; i++)
         {
             Pawn pawn = pawns[i];
@@ -74,25 +100,22 @@ public class AI : Singleton<AI>
                         Move possibleMove = new Move(pawn.position, destinationPos, 'p', boardData.GetChar(destinationPos));
                         AiMove possibleMoveWithScore = new AiMove();
                         possibleMoveWithScore.move = possibleMove;
-                        //print(possibleMove.ToString());
+                        print(possibleMove.ToString());
                         possibleAiMovesWithScores.Add(possibleMoveWithScore);
                     }
                 }
             }
-        }
+        }*/
 
         return possibleAiMovesWithScores;
     }
 
-    public void Run(BoardData boardData)
+    public IEnumerator Run(BoardData boardData)
     {
         print("Executing AI");
 
         float timeWhenAiStarted = Time.realtimeSinceStartup;
 
-        //List<AiMove> possibleMoves = GetPossibleMoves(currentBoard);
-        rootMoves = new List<AiMove>();
-        //AiMove rootMove = new AiMove()
         float alpha = float.MinValue;
         float beta = float.MaxValue;
 
@@ -107,7 +130,8 @@ public class AI : Singleton<AI>
             boardDataCopy.Copy(boardData);
             boardDataCopy.MakeMove(possibleMovesWithScores[i].move);
 
-            possibleMovesWithScores[i].score = Minimax(0, possibleMovesWithScores[i].move, boardDataCopy, GameManager.PawnColor.BLACK, alpha, beta);
+            possibleMovesWithScores[i].score = Minimax(0, possibleMovesWithScores[i].move, boardDataCopy, GameManager.PawnColor.WHITE, alpha, beta);
+            yield return new WaitForEndOfFrame();
             //print(possibleMovesWithScores[i].move.ToString() + " " + possibleMovesWithScores[i].score);
         }
 
@@ -124,7 +148,7 @@ public class AI : Singleton<AI>
         }
 
         print(bestMoveScore);
-
+        yield return new WaitForEndOfFrame();
         GameManager.Instance.MakeMove(bestAiMove.move);
     }
 
@@ -134,11 +158,13 @@ public class AI : Singleton<AI>
 
         if(move.destinationChar == 'P')
         {
+            //print("P " + sideWhoseScoreIsCalculated);
             return maxAiScore * Mathf.Pow(decay, depth) + (Random.value);
         }
 
         if(move.destinationChar == 'p')
         {
+            //print("p " + sideWhoseScoreIsCalculated);
             return -maxAiScore * Mathf.Pow(decay, depth) + (Random.value);
         }
 
@@ -166,11 +192,6 @@ public class AI : Singleton<AI>
             float score = Minimax(depth + 1, possibleAiMovesWithScores[i].move, boardDataCopy, oppositeSide, alpha, beta);
             possibleAiMovesWithScores[i].score = (score);
             scores.Add(possibleAiMovesWithScores[i].score);
-
-            if (depth == 0)
-            {
-                rootMoves.Add(possibleAiMovesWithScores[i]);
-            }
 
             if (isMaximizing)
             {

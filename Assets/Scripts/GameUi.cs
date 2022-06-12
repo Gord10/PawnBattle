@@ -8,6 +8,8 @@ public class GameUi : Singleton<GameUi>
 {
     public GameObject gameEndScreen;
     public TextMeshProUGUI gameEndText;
+    public Image gameEndSpriteRenderer;
+    public Sprite whiteWinsSprite, blackWinsSprite;
 
     protected override void Awake()
     {
@@ -19,6 +21,7 @@ public class GameUi : Singleton<GameUi>
     {
         gameEndScreen.SetActive(true);
 
+        /*
         if(state == GameManager.State.BLACK_VICTORY)
         {
             gameEndText.text = "Black Wins";
@@ -26,7 +29,9 @@ public class GameUi : Singleton<GameUi>
         else if(state == GameManager.State.WHITE_VICTORY)
         {
             gameEndText.text = "White Wins";
-        }
+        }*/
+
+        gameEndSpriteRenderer.sprite = (state == GameManager.State.WHITE_VICTORY) ? whiteWinsSprite : blackWinsSprite;
     }
 
     public void RestartGame()
